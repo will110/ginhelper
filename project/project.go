@@ -16,8 +16,10 @@ var dirList = []string{
 	"filters",
 	"models",
 	"pkg",
+	"pkg/utils",
 	"routers",
 	"runtime",
+	"static",
 	"serviceLogics",
 	"tests",
 }
@@ -30,7 +32,10 @@ func GenerateProject() {
 
 	generateDir()
 	generateControllerFile()
+	generateUtilsFile()
 	generateRouterFile()
+	generateMainFile()
+	generateGitignoreFile()
 }
 
 func generateDir() {
@@ -88,12 +93,59 @@ func generateRouterFile() {
 		log.Fatalln("you create file in src directory")
 	}
 
-	fileList[1] = strings.Replace(fileList[1], string(filepath.Separator), "/", -1)
-	fileList[1] = fileList[1][1:]
+	fileList[1] = strings.Replace(fileList[1], string(filepath.Separator), "/", -1)[1:]
 	routerTemp = strings.Replace(routerTemp, "{{controllers}}", fileList[1], -1)
 	routerTemp = strings.Replace(routerTemp, "{{utils}}", fileList[1], -1)
 	_, _ = f.WriteString(routerTemp)
 	_ = f.Close()
 	cmd := exec.Command("gofmt", "-w", fpath)
 	_ = cmd.Run()
+}
+
+func generateUtilsFile() {
+	currentPath, _ := os.Getwd()
+	fpath := path.Join(currentPath, "pkg/utils", "engine.go")
+	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
+	if err != nil {
+		log.Fatalf("Could not create engine.go file: %s", err)
+	}
+
+	_, _ = f.WriteString(engineTemp)
+	_ = f.Close()
+	cmd := exec.Command("gofmt", "-w", fpath)
+	_ = cmd.Run()
+}
+
+func generateMainFile() {
+	currentPath, _ := os.Getwd()
+	fpath := path.Join(currentPath, "main.go")
+	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
+	if err != nil {
+		log.Fatalf("Could not create main.go file: %s", err)
+	}
+
+	fileList := strings.Split(currentPath, "src")
+	if len(fileList[1]) == 0 {
+		log.Fatalln("you create file in src directory")
+	}
+
+	fileList[1] = strings.Replace(fileList[1], string(filepath.Separator), "/", -1)[1:]
+	mainTemp = strings.Replace(mainTemp, "{{pkg}}", fileList[1], -1)
+	mainTemp = strings.Replace(mainTemp, "{{routers}}", fileList[1], -1)
+	_, _ = f.WriteString(mainTemp)
+	_ = f.Close()
+	cmd := exec.Command("gofmt", "-w", fpath)
+	_ = cmd.Run()
+}
+
+func generateGitignoreFile() {
+	currentPath, _ := os.Getwd()
+	fpath := path.Join(currentPath, ".gitignore")
+	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
+	if err != nil {
+		log.Fatalf("Could not create gitignore file: %s", err)
+	}
+
+	_, _ = f.WriteString(gitignoreTmep)
+	_ = f.Close()
 }

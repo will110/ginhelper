@@ -66,3 +66,39 @@ func InitRouter() {
 	}
 }
 `
+
+var engineTemp = `
+package utils
+
+import "github.com/gin-gonic/gin"
+
+var R *gin.Engine
+
+func NewGinDefault() *gin.Engine {
+	r := gin.Default()
+	R = r
+
+	return r
+}
+`
+
+var mainTemp = `
+package main
+
+import (
+	"log"
+	"{{pkg}}/pkg/utils"
+	"{{routers}}/routers"
+)
+
+func main() {
+	routers.InitRouter()
+	log.Fatal(utils.R.Run(":8099"))
+}
+
+`
+
+var gitignoreTmep = `runtime/log/
+debug
+.idea
+`
