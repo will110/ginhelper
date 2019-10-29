@@ -1,6 +1,9 @@
 package project
 
 import (
+	"bufio"
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -10,32 +13,52 @@ import (
 )
 
 var dirList = []string{
-	"commands",
+	"command",
 	"conf",
-	"controllers",
-	"filters",
-	"models",
+	"controller",
+	"filter",
+	"model",
+	"model/user",
+	"model/userdetail",
 	"pkg",
 	"pkg/utils",
-	"routers",
+	"pkg/db",
+	"pkg/myerror",
+	"pkg/param",
+	"router",
 	"runtime",
 	"static",
-	"serviceLogics",
-	"tests",
+	"servicelogic",
+	"test",
 }
 
+var modName string
+var appName string
+
 func GenerateProject() {
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
-		log.Fatal("GOPATH environment variable is not set or empty")
+	modName = getModName()
+	if len(modName) == 0 {
+		gopath := os.Getenv("GOPATH")
+		if gopath == "" {
+			log.Fatal("GOPATH environment variable is not set or empty")
+		}
+
+		appDir, err := getAppDir()
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		modName = appDir
+
+		buf := strings.Split(appDir, "/")
+		appName = buf[len(buf) - 1]
+	} else {
+		appName = modName
 	}
 
+	fmt.Println("dir creating ...")
 	generateDir()
-	generateControllerFile()
-	generateUtilsFile()
-	generateRouterFile()
-	generateMainFile()
-	generateGitignoreFile()
+	generateAllFile()
 }
 
 func generateDir() {
@@ -50,92 +73,56 @@ func generateDir() {
 	}
 }
 
-func generateControllerFile() {
-	currentPath, _ := os.Getwd()
-	fpath := path.Join(currentPath, "controllers", "BaseController.go")
-	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
-	if err != nil {
-		log.Fatalf("Could not create BaseController.go file: %s", err)
-	}
+func generateAllFile() {
+	//controller
+	generateFile( "controller", "BaseController", baseControllerTemp)
+	generateFile( "controller", "UserController", userControllerTemp)
 
-	_, _ = f.WriteString(baseControllerTemp)
-	_ = f.Close()
-	cmd := exec.Command("gofmt", "-w", fpath)
-	_ = cmd.Run()
+	//config
+	generateFile( "conf", "app", appConf, "conf")
+	generateFile( "conf", "test_app", testAppConf, "conf")
+	generateFile( "conf", "prod_app", prodAppConf, "conf")
+	generateFile( "conf", "preview_app", previewAppConf, "conf")
+	generateFile( "conf", "local_app", localAppConf, "conf")
+	generateFile( "conf", "dev_app", devAppConf, "conf")
 
+	//filter
+	generateFile( "filter", "UserFilter", userFilterTemp)
 
-	fpath = path.Join(currentPath, "controllers", "UserController.go")
-	f, err = os.OpenFile(fpath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
-	if err != nil {
-		log.Fatalf("Could not create UserController.go file: %s", err)
-	}
+	//router
+	generateFile( "router", "router", routerTemp)
 
-	_, _ = f.WriteString(userControllerTemp)
-	_ = f.Close()
-	cmd = exec.Command("gofmt", "-w", fpath)
-	_ = cmd.Run()
-}
+	//pkg db
+	generateFile( "pkg/db", "db", pkgDbdbTemp)
+	generateFile( "pkg/db", "mongodb", pkgDbMongodbTemp)
+	generateFile( "pkg/db", "redis", pkgDbRedisTemp)
+	//pkg myerror
+	generateFile( "pkg/myerror", "errorCode", pkgMyerrorTemp)
 
-func generateRouterFile() {
-	currentPath, _ := os.Getwd()
-	if strings.Index(currentPath, "src") == -1 {
-		log.Fatalln("you create file in src directory")
-	}
+	//pkg param
+	generateFile( "pkg/param", "user", pkgParamTemp)
 
-	fpath := path.Join(currentPath, "routers", "router.go")
-	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
-	if err != nil {
-		log.Fatalf("Could not create router.go file: %s", err)
-	}
+	//pkg utils
+	generateFile( "pkg/utils", "config", pkgUtilsConfigTemp)
+	generateFile( "pkg/utils", "engine", pkgUtilsEngineTemp)
+	generateFile( "pkg/utils", "error", pkgUtilsErrorTemp)
+	generateFile( "pkg/utils", "file", pkgUtilsFileTemp)
+	generateFile( "pkg/utils", "response", pkgUtilsResponseTemp)
 
-	fileList := strings.Split(currentPath, "src")
-	if len(fileList[1]) == 0 {
-		log.Fatalln("you create file in src directory")
-	}
+	//model
+	generateFile( "model/user", "User", modelUserTemp)
+	generateFile( "model/userdetail", "UserDetail", modelUserDetailTemp)
 
-	fileList[1] = strings.Replace(fileList[1], string(filepath.Separator), "/", -1)[1:]
-	routerTemp = strings.Replace(routerTemp, "{{controllers}}", fileList[1], -1)
-	routerTemp = strings.Replace(routerTemp, "{{utils}}", fileList[1], -1)
-	_, _ = f.WriteString(routerTemp)
-	_ = f.Close()
-	cmd := exec.Command("gofmt", "-w", fpath)
-	_ = cmd.Run()
-}
+	//servicelogic
+	generateFile( "servicelogic", "UserLogic", servicelogicUserLogicTemp)
 
-func generateUtilsFile() {
-	currentPath, _ := os.Getwd()
-	fpath := path.Join(currentPath, "pkg/utils", "engine.go")
-	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
-	if err != nil {
-		log.Fatalf("Could not create engine.go file: %s", err)
-	}
+	//main
+	generateFile( "", "config", mainConfigTemp)
+	generateFile( "", "main", mainTemp)
 
-	_, _ = f.WriteString(engineTemp)
-	_ = f.Close()
-	cmd := exec.Command("gofmt", "-w", fpath)
-	_ = cmd.Run()
-}
+	//Gitignore
+	generateGitignoreFile()
 
-func generateMainFile() {
-	currentPath, _ := os.Getwd()
-	fpath := path.Join(currentPath, "main.go")
-	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
-	if err != nil {
-		log.Fatalf("Could not create main.go file: %s", err)
-	}
-
-	fileList := strings.Split(currentPath, "src")
-	if len(fileList[1]) == 0 {
-		log.Fatalln("you create file in src directory")
-	}
-
-	fileList[1] = strings.Replace(fileList[1], string(filepath.Separator), "/", -1)[1:]
-	mainTemp = strings.Replace(mainTemp, "{{pkg}}", fileList[1], -1)
-	mainTemp = strings.Replace(mainTemp, "{{routers}}", fileList[1], -1)
-	_, _ = f.WriteString(mainTemp)
-	_ = f.Close()
-	cmd := exec.Command("gofmt", "-w", fpath)
-	_ = cmd.Run()
 }
 
 func generateGitignoreFile() {
@@ -146,6 +133,80 @@ func generateGitignoreFile() {
 		log.Fatalf("Could not create gitignore file: %s", err)
 	}
 
+	gitignoreTmep += appName + ".exe\n" + appName + ".exe*\n" + appName+"\n"
 	_, _ = f.WriteString(gitignoreTmep)
 	_ = f.Close()
+}
+
+func getAppDir() (string, error) {
+	currentPath, _ := os.Getwd()
+	if strings.Index(currentPath, "src") == -1 {
+		return "", errors.New("you create file in src directory")
+	}
+
+	fileList := strings.Split(currentPath, "src")
+	if len(fileList[1]) == 0 {
+		return "", errors.New("you create file in src directory")
+	}
+
+	dir := strings.Replace(fileList[1], string(filepath.Separator), "/", -1)[1:]
+
+	return dir, nil
+}
+
+func getModName() string {
+	var modName string
+	_ = filepath.Walk("./", func(path string, info os.FileInfo, err error) error {
+		if path != "go.mod" {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			_ = f.Close()
+		}()
+
+		fread := bufio.NewReader(f)
+		for {
+			strBuf, _, err := fread.ReadLine()
+			if err != nil {
+				continue
+			}
+			str := string(strBuf)
+
+			if strings.Contains(str, "module") {
+				str = strings.ReplaceAll(str, "module", "")
+				str = strings.ReplaceAll(str, " ", "")
+				str = strings.ReplaceAll(str, "	", "")
+				modName = str
+				break
+			}
+		}
+
+		return nil
+	})
+
+	return modName
+}
+
+func generateFile(dir, fileName, str string, ext ...string) {
+	currentPath, _ := os.Getwd()
+	extStr := "go"
+	if len(ext) > 0 {
+		extStr = ext[0]
+	}
+	fpath := path.Join(currentPath, dir, fileName + "." + extStr)
+	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
+	if err != nil {
+		log.Fatalf("Could not create %s/%s.go" +" file: %s", dir, fileName, err)
+	}
+
+	str = strings.Replace(str, "{{baseDir}}", modName, -1)
+	_, _ = f.WriteString(str)
+	_ = f.Close()
+	cmd := exec.Command("gofmt", "-w", fpath)
+	_ = cmd.Run()
 }

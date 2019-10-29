@@ -2,7 +2,7 @@ package routerhelper
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ginhelper/ctl"
+	"github.com/will110/ginhelper/ctl"
 	"reflect"
 )
 
