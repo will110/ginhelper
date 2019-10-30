@@ -25,7 +25,7 @@ func (m *BaseController) Prepare() {
 	if app, ok := m.AppController.(InitialiseInterface); ok {
 		app.Initialise()
 	}
-	//这里可以做一些初始化的工作
+	//这里可以做一些初始化的工作, 比如权限的验证，签名验证等等
 }
 
 func (m *BaseController) Finish() {
@@ -594,7 +594,6 @@ type ResponseList struct {
 var modelUserTemp = `package user
 
 import (
-	"fmt"
 	//"{{baseDir}}/pkg/db"
 )
 
@@ -770,6 +769,10 @@ var gitignoreTmep = `runtime/log/
 debug
 .idea
 local_app.conf
+.vscode
+.DS_Store
+*.swp
+*.swo
 `
 
 var mainConfigTemp = `package main

@@ -59,7 +59,7 @@ func GenerateProject() {
 	fmt.Println("Project creating ...")
 	generateDir()
 	generateAllFile()
-	fmt.Println("Create complete.")
+	fmt.Println("Congratulations on the completion of the project. Take a look at it.")
 }
 
 func generateDir() {
@@ -142,12 +142,12 @@ func generateGitignoreFile() {
 func getAppDir() (string, error) {
 	currentPath, _ := os.Getwd()
 	if strings.Index(currentPath, "src") == -1 {
-		return "", errors.New("you create file in src directory")
+		return "", errors.New("You must create file in the src directory or go mod project")
 	}
 
 	fileList := strings.Split(currentPath, "src")
 	if len(fileList[1]) == 0 {
-		return "", errors.New("you create file in src directory")
+		return "", errors.New("You must create file in the src directory or go mod project")
 	}
 
 	dir := strings.Replace(fileList[1], string(filepath.Separator), "/", -1)[1:]
