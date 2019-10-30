@@ -56,9 +56,10 @@ func GenerateProject() {
 		appName = modName
 	}
 
-	fmt.Println("dir creating ...")
+	fmt.Println("Project creating ...")
 	generateDir()
 	generateAllFile()
+	fmt.Println("Create complete.")
 }
 
 func generateDir() {

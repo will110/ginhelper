@@ -723,11 +723,11 @@ var mainTemp = `package main
 
 import (
 	"log"
-	"{{baseDir}}/pkg/db"
+	//"{{baseDir}}/pkg/db"
 	"{{baseDir}}/pkg/utils"
 	"{{baseDir}}/router"
 	//_ "github.com/jinzhu/gorm/dialects/mysql"
-	"time"
+	//"time"
 )
 
 func main() {
