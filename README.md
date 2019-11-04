@@ -5,7 +5,7 @@ ginhelper 是一个gin web框架的快速搭建项目的助手，帮助你快速
 ## 一、使用方法
 
 ### 1、下载
-go get github.com/will110/ginhelper
+go get -u github.com/will110/ginhelper
 
 
 ### 2、生成项目

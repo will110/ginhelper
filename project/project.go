@@ -151,11 +151,11 @@ func getAppDir() (string, error) {
 	}
 
 	fileList := strings.Split(currentPath, "src")
-	if len(fileList[1]) == 0 {
+	if len(fileList[len(fileList) - 1]) == 0 {
 		return "", errors.New("You must create file in the src directory or go mod project")
 	}
 
-	dir := strings.Replace(fileList[1], string(filepath.Separator), "/", -1)[1:]
+	dir := strings.Replace(fileList[len(fileList) - 1], getSep(), "/", -1)[1:]
 
 	return dir, nil
 }
