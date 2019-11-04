@@ -65,7 +65,7 @@ __(2)、如果你只是在src目录下开发项目，你可以这样操作，这
     2、下载其他的依赖
     
        go get -u github.com/gin-gonic/gin
-       go get github.com/astaxie/beego  #这里我们可以使用beego的config、httplib、logs、cache等模块
+       go get github.com/astaxie/beego/config  #这里我们可以使用beego的config, 如果你还想使用beego的其他模块请自行下载，如：httplib、logs、cache等模块
        go get github.com/beego/bee  #可选下载
        github.com/jinzhu/gorm
        github.com/go-redis/redis

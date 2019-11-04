@@ -204,6 +204,8 @@ var localAppConf = `name = "hello-local"
 var previewAppConf = `include "app.conf"
 #当前环境的配置可以配置在这里
 
+name = "preivew"
+
 #请保持在最后一行
 include "local_app.conf"
 `
@@ -211,12 +213,16 @@ include "local_app.conf"
 var prodAppConf = `include "app.conf"
 #当前环境的配置可以配置在这里
 
+name = "prod"
+
 #请保持在最后一行
 include "local_app.conf"
 `
 
 var testAppConf = `include "app.conf"
 #当前环境的配置可以配置在这里
+
+name = "test"
 
 #请保持在最后一行
 include "local_app.conf"
@@ -359,7 +365,7 @@ import (
 	"flag"
 	"github.com/jinzhu/gorm"
 	"fmt"
-	"github.com/astaxie/beego"
+	"{{baseDir}}/pkg/utils"
 )
 
 var (
@@ -367,12 +373,12 @@ var (
 )
 
 func GetDbConnect() (*gorm.DB, error) {
-	dbConStr := fmt.Sprintf("%s:%s@tcp(%s)/%s%s?charset=utf8&parseTime=True&loc=Local", beego.AppConfig.String("db::user"), beego.AppConfig.String("db::password"), beego.AppConfig.String("db::host"), beego.AppConfig.String("db::database"), getConnectDbName())
+	dbConStr := fmt.Sprintf("%s:%s@tcp(%s)/%s%s?charset=utf8&parseTime=True&loc=Local", utils.BeeConfig.String("db::user"), utils.BeeConfig.String("db::password"), utils.BeeConfig.String("db::host"), utils.BeeConfig.String("db::database"), getConnectDbName())
 	fmt.Println(dbConStr, "dbConStr")
 	db, err := gorm.Open("mysql", dbConStr)
 	Conn = db
 
-	runMode := beego.AppConfig.String("runmode")
+	runMode := utils.BeeConfig.String("runmode")
 	if runMode == "dev" || runMode == "test" {
 		db.LogMode(true)
 	}
@@ -395,11 +401,11 @@ var pkgDbMongodbTemp = `package db
 import (
 	"context"
 	"fmt"
-	"github.com/astaxie/beego"
+	"time"
+	"{{baseDir}}/pkg/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"time"
 )
 
 var (
@@ -409,7 +415,7 @@ var (
 //连接mongodb
 func GetMongodbClient() (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
-	host := fmt.Sprintf("mongodb://%s", beego.AppConfig.String("mongodb::host"))
+	host := fmt.Sprintf("mongodb://%s", utils.BeeConfig.String("mongodb::host"))
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(host))
 	cancel()
 	if err != nil {
@@ -435,7 +441,7 @@ var pkgDbRedisTemp = `package db
 /*
 import (
 	"github.com/go-redis/redis"
-	"github.com/astaxie/beego"
+	"{{baseDir}}/pkg/utils"
 )
 
 var (
@@ -444,15 +450,15 @@ var (
 
 //连接redis
 func GetRedisClient() (*redis.Client, error){
-	db ,_ := beego.AppConfig.Int("redis::database")
+	db ,_ := utils.BeeConfig.Int("redis::database")
 	redisOption := &redis.Options{
-		Addr:     beego.AppConfig.String("redis::host"),
+		Addr:     utils.BeeConfig.String("redis::host"),
 		DB:       db,
 	}
 
-	runMode := beego.AppConfig.String("runmode")
+	runMode := utils.BeeConfig.String("runmode")
 	if runMode != "prod" {
-		redisOption.Password = beego.AppConfig.String("redis::password")
+		redisOption.Password = utils.BeeConfig.String("redis::password")
 	}
 	client := redis.NewClient(redisOption)
 
@@ -505,8 +511,11 @@ type UserForm struct {
 
 var pkgUtilsConfigTemp = `package utils
 
+import "github.com/astaxie/beego/config"
+
 var (
 	MyConfig *WebConfig
+	BeeConfig config.Configer
 )
 
 type WebConfig struct {
@@ -782,7 +791,7 @@ import (
 	"log"
 	"os"
 	"{{baseDir}}/pkg/utils"
-	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/config"
 )
 
 var envMode = "WebRunMode"
@@ -797,10 +806,11 @@ func InitConfig() {
 	}
 
 	configName := fmt.Sprintf("conf/%s_app.conf", env)
-	err := beego.LoadAppConfig("ini", configName)
+	beeConfig, err := config.NewConfig("ini", configName)
 	if err != nil {
 		log.Fatal(err)
 	}
+	utils.BeeConfig = beeConfig
 
 	configList, err := LoadConfig()
 	if err != nil {
@@ -816,10 +826,10 @@ func InitConfig() {
 */
 func LoadConfig() (*utils.WebConfig, error) {
 	config := &utils.WebConfig{}
-	config.DbHost = beego.AppConfig.String("db::host")
-	config.DbName = beego.AppConfig.String("db::user")
-	config.DbPassword = beego.AppConfig.String("db::password")
-	version, err := beego.AppConfig.Float("version")
+	config.DbHost = utils.BeeConfig.String("db::host")
+	config.DbName = utils.BeeConfig.String("db::user")
+	config.DbPassword = utils.BeeConfig.String("db::password")
+	version, err := utils.BeeConfig.Float("version")
 	if err != nil {
 		config.Version = version
 	}

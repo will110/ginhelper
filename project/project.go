@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/logrusorgru/aurora"
 	"log"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var dirList = []string{
@@ -56,10 +58,10 @@ func GenerateProject() {
 		appName = modName
 	}
 
-	fmt.Println("Project creating ...")
+	fmt.Println(aurora.BrightWhite("[INFO] Creating project..."))
 	generateDir()
 	generateAllFile()
-	fmt.Println("Congratulations on the completion of the project. Take a look at it.")
+	fmt.Println(aurora.BrightRed(time.Now().Format("2006-01-02 15:04:05") + " [SUCC] New project successfully created, Take a look at it."))
 }
 
 func generateDir() {
@@ -69,6 +71,8 @@ func generateDir() {
 		if _, err := os.Stat(fp); os.IsNotExist(err) {
 			if er := os.MkdirAll(fp, 0777); er != nil {
 				log.Fatalf("Could not create the "+ v +" directory: %s", er)
+			}else {
+				fmt.Println(strings.ReplaceAll(fp, "/", getSep()))
 			}
 		}
 	}
@@ -137,6 +141,7 @@ func generateGitignoreFile() {
 	gitignoreTmep += appName + ".exe\n" + appName + ".exe*\n" + appName+"\n"
 	_, _ = f.WriteString(gitignoreTmep)
 	_ = f.Close()
+	fmt.Println(strings.ReplaceAll(fpath, "/", getSep()))
 }
 
 func getAppDir() (string, error) {
@@ -210,4 +215,10 @@ func generateFile(dir, fileName, str string, ext ...string) {
 	_ = f.Close()
 	cmd := exec.Command("gofmt", "-w", fpath)
 	_ = cmd.Run()
+
+	fmt.Println(strings.ReplaceAll(fpath, "/", getSep()))
+}
+
+func getSep() string {
+	return string(filepath.Separator)
 }
